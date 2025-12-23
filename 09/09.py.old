@@ -1,0 +1,56 @@
+from itertools import combinations
+import numpy as np
+from skimage.segmentation import flood
+
+def solve(fn, part2=False):
+    with open(fn) as f:
+        lines = [li.strip() for li in f.readlines()]
+
+    old_pos = [tuple(int(s) for s in li.split(',')) for li in lines]
+    n = len(old_pos)
+
+    min_x = min(p[0] for p in old_pos)
+    min_y = min(p[1] for p in old_pos)
+
+    pos = [(1+p[0]-min_x, 1+p[1]-min_y) for p in old_pos]
+
+    max_x = max(p[0] for p in pos)
+    max_y = max(p[1] for p in pos)
+    print(max_y+2,max_x+2)
+
+    if part2:
+        mask = np.zeros(shape=(max_y+2,max_x+2), dtype=int)
+
+        for i in range(1,n+1):
+            p1, p2 = sorted((pos[i%n], pos[i-1]))
+            mask[p1[1]:p2[1]+1,p1[0]:p2[0]+1] = 1
+            
+        assert not mask[0,0]
+        mask = 1-flood(mask, (0,0))
+        print('mask:', mask)
+
+    max_area = 0
+    for p1, p2 in combinations(pos, r=2):
+        r1, r2 = sorted([p1[1], p2[1]])
+        c1, c2 = sorted([p1[0], p2[0]])
+        if part2:
+            rect = mask[r1:r2+1,c1:c2+1]
+            if not np.all(rect):
+                continue
+            area = np.sum(rect)
+        else:
+            area = (1+r2-r1)*(1+c2-c1)
+        if area > max_area:
+            max_area = area
+
+    print(max_area)
+    return max_area
+
+def main():
+    assert solve('test.txt') == 50
+    print(solve('input.txt')) # 4750297200
+    assert solve('test.txt', part2=True) == 24 
+    print(solve('input.txt', part2=True))
+
+if __name__ == '__main__':
+    main()
